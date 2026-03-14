@@ -3,15 +3,25 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Vendor = require('../models/Vendor');
-const { authMiddleware } = require('../middleware/auth');
 
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token, authorization denied' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Token is not valid' });
+  }
+};
 // POST /api/vendors/signup
 router.post('/signup', async (req, res) => {
   try {
-    const { stallName, upiId, password } = req.body;
+    const { name, upiId, password } = req.body;
 
     // Check if stall name already exists
-    const existing = await Vendor.findOne({ stallName: { $regex: new RegExp(`^${stallName}$`, 'i') } });
+    const existing = await Vendor.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
     if (existing) {
       return res.status(400).json({ error: 'A stall with this name already exists.' });
     }
@@ -21,7 +31,7 @@ router.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const vendor = new Vendor({
-      stallName,
+      name,
       upiId,
       password: hashedPassword,
     });
@@ -40,7 +50,7 @@ router.post('/signup', async (req, res) => {
       token,
       vendor: {
         id: vendor._id,
-        stallName: vendor.stallName,
+        name: vendor.name,
         slug: vendor.slug,
         upiId: vendor.upiId,
         approvalStatus: vendor.approvalStatus,
@@ -56,8 +66,8 @@ router.post('/signup', async (req, res) => {
 // POST /api/vendors/login
 router.post('/login', async (req, res) => {
   try {
-    const { stallName, password } = req.body;
-    const vendor = await Vendor.findOne({ stallName: { $regex: new RegExp(`^${stallName}$`, 'i') } });
+    const { name, password } = req.body;
+    const vendor = await Vendor.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
     if (!vendor) {
       return res.status(400).json({ error: 'Invalid stall name or password.' });
     }
@@ -77,7 +87,7 @@ router.post('/login', async (req, res) => {
       token,
       vendor: {
         id: vendor._id,
-        stallName: vendor.stallName,
+        name: vendor.name,
         slug: vendor.slug,
         upiId: vendor.upiId,
         approvalStatus: vendor.approvalStatus,
@@ -171,12 +181,12 @@ router.get('/store/:slug', async (req, res) => {
     if (!vendor) return res.status(404).json({ error: 'Stall not found.' });
 
     res.json({
-      stallName: vendor.stallName,
+      name: vendor.name,
       slug: vendor.slug,
       upiId: vendor.upiId,
       isLive: vendor.isLive,
       currentEventCode: vendor.currentEventCode,
-      inventory: vendor.inventory.filter((item) => item.available),
+      inventory: vendor.inventory, // Sending full inventory, frontend can filter out out-of-stock items
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

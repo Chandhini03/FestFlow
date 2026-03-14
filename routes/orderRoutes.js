@@ -2,26 +2,39 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Vendor = require('../models/Vendor');
-const { authMiddleware } = require('../middleware/auth');
+const { sendWhatsApp } = require('../utils/whatsapp');
+const jwt = require('jsonwebtoken');
+
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token, authorization denied' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Token is not valid' });
+  }
+};
 
 // POST /api/orders  (Customer places an order)
 router.post('/', async (req, res) => {
   try {
-    const { vendorSlug, items, customerWhatsApp } = req.body;
+    const { vendorSlug, items, customerPhone } = req.body;
 
     // Find vendor by slug
     const vendor = await Vendor.findOne({ slug: vendorSlug });
     if (!vendor) return res.status(404).json({ error: 'Stall not found.' });
     if (!vendor.isLive) return res.status(400).json({ error: 'This stall is currently offline.' });
 
-    // Calculate total
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Calculate totalAmount
+    const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const order = new Order({
       vendorId: vendor._id,
       items,
-      total,
-      customerWhatsApp,
+      totalAmount,
+      customerPhone,
       eventCode: vendor.currentEventCode,
     });
     await order.save();
@@ -40,7 +53,7 @@ router.get('/active', authMiddleware, async (req, res) => {
   try {
     const orders = await Order.find({
       vendorId: req.user.id,
-      status: { $in: ['placed', 'approved'] },
+      status: { $in: ['Awaiting Verification', 'Preparing'] },
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -57,8 +70,8 @@ router.get('/history', authMiddleware, async (req, res) => {
     }).sort({ createdAt: -1 });
 
     const totalRevenue = orders
-      .filter((o) => o.status === 'completed' || o.status === 'ready')
-      .reduce((sum, o) => sum + o.total, 0);
+      .filter((o) => o.status === 'Completed' || o.status === 'Ready')
+      .reduce((sum, o) => sum + o.totalAmount, 0);
 
     res.json({ totalRevenue, orders });
   } catch (err) {
@@ -70,8 +83,8 @@ router.get('/history', authMiddleware, async (req, res) => {
 router.put('/:id/status', authMiddleware, async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['approved', 'ready', 'completed'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status. Use: approved, ready, or completed.' });
+    if (!['Awaiting Verification', 'Preparing', 'Ready', 'Completed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Use: Awaiting Verification, Preparing, Ready, or Completed.' });
     }
 
     const order = await Order.findById(req.params.id);
@@ -85,14 +98,29 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     order.status = status;
     await order.save();
 
-    // TODO: Trigger WhatsApp notifications here (Block 2.5)
-    // if (status === 'approved') sendWhatsApp(order.customerWhatsApp, 'Your order has been confirmed! ✅');
-    // if (status === 'ready') sendWhatsApp(order.customerWhatsApp, 'Your order is ready for pickup! 🎉');
+    // Trigger WhatsApp notifications
+    if (status === 'Preparing') {
+      sendWhatsApp(order.customerPhone, 'Your order has been confirmed and is being prepared! ✅');
+    }
+    if (status === 'Ready') {
+      sendWhatsApp(order.customerPhone, 'Your order is ready for pickup! 🎉 Visit the stall to collect it.');
+    }
 
     res.json({
       message: `Order status updated to "${status}".`,
       order,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/orders/:id  (Customer fetches live status)
+router.get('/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found.' });
+    res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

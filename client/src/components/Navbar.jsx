@@ -1,19 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/signup');
   };
 
   if (!user) return null;
 
   const isApproved = user.approvalStatus === 'approved';
+  const role = user.role;
 
   return (
     <nav className="navbar">
@@ -24,8 +26,8 @@ export default function Navbar() {
       <div className="navbar-links">
         {role === 'vendor' && (
           <>
-            <Link to="/admin/menu" className="nav-link">
-              Menu Builder
+            <Link to="/admin" className="nav-link">
+              Dashboard
             </Link>
             {isApproved && (
               <>
@@ -42,11 +44,11 @@ export default function Navbar() {
         {role === 'admin' && (
           <>
             <Link to="/super-admin" className="nav-link">
-              Dashboard
+              Admin Panel
             </Link>
           </>
         )}
-        <button className="nav-logout" onClick={handleLogout}>
+        <button className="nav-logout" onClick={handleLogout} style={{background: 'transparent', border: '1px solid currentColor', padding: '0.25rem 0.75rem', borderRadius: '4px', cursor: 'pointer', color: 'inherit'}}>
           Logout
         </button>
       </div>

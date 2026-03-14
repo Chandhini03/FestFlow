@@ -1,108 +1,109 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { VendorRoute, AdminRoute, ApprovedOnly } from './components/Guards';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-
-// Auth pages
 import Signup from './pages/Signup';
-import Login from './pages/Login';
-import AdminLogin from './pages/AdminLogin';
-
-// Vendor pages
-import WaitingRoom from './pages/WaitingRoom';
-import MenuBuilder from './pages/MenuBuilder';
-import LivePOS from './pages/LivePOS';
-import History from './pages/History';
-
-// Admin pages
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-
-// Public pages
+import PendingDashboard from './pages/PendingDashboard';
+import SuperAdminDash from './pages/SuperAdminDash';
+import VendorPOS from './pages/VendorPOS';
+import VendorHistory from './pages/VendorHistory';
 import Storefront from './pages/Storefront';
-
+import CustomerOrders from './components/CustomerOrders';
 import './index.css';
+
+// Inline simple state management to save files
+export function VendorRoute({ children }) {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return <Navigate to="/signup" replace />;
+  const user = JSON.parse(userStr);
+  if (user.role !== 'vendor') return <Navigate to="/signup" replace />;
+  return children;
+}
+
+export function AdminRoute({ children }) {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return <Navigate to="/signup" replace />;
+  const user = JSON.parse(userStr);
+  if (user.role !== 'admin') return <Navigate to="/signup" replace />;
+  return children;
+}
+
+export function ApprovedOnly({ children }) {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return <Navigate to="/signup" replace />;
+  const user = JSON.parse(userStr);
+  if (user.approvalStatus !== 'approved') return <Navigate to="/admin" replace />;
+  return children;
+}
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            {/* Public Auth */}
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/super-admin/login" element={<AdminLogin />} />
+    <Router>
+      <Navbar />
+      <CustomerOrders />
+      <main className="main-content">
+        <Routes>
+          {/* Unified Auth Page */}
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Navigate to="/signup" replace />} />
+          <Route path="/super-admin/login" element={<Navigate to="/signup?mode=admin" replace />} />
 
-            {/* Vendor Dashboard — Waiting Room (accessible to all vendors) */}
-            <Route
-              path="/admin"
-              element={
-                <VendorRoute>
-                  <WaitingRoom />
-                </VendorRoute>
-              }
-            />
-            <Route
-              path="/admin/waiting"
-              element={
-                <VendorRoute>
-                  <WaitingRoom />
-                </VendorRoute>
-              }
-            />
+          {/* Vendor Draft Mode / Menu Builder */}
+          <Route
+            path="/admin"
+            element={
+              <VendorRoute>
+                <PendingDashboard />
+              </VendorRoute>
+            }
+          />
+          <Route
+            path="/admin/waiting"
+            element={
+              <VendorRoute>
+                <PendingDashboard />
+              </VendorRoute>
+            }
+          />
+          
+          {/* Vendor Approved Pages */}
+          <Route
+            path="/admin/pos"
+            element={
+              <VendorRoute>
+                <ApprovedOnly>
+                  <VendorPOS />
+                </ApprovedOnly>
+              </VendorRoute>
+            }
+          />
+          <Route
+            path="/admin/history"
+            element={
+              <VendorRoute>
+                <ApprovedOnly>
+                  <VendorHistory />
+                </ApprovedOnly>
+              </VendorRoute>
+            }
+          />
 
-            {/* Vendor Dashboard — Menu Builder (accessible to all vendors, even pending) */}
-            <Route
-              path="/admin/menu"
-              element={
-                <VendorRoute>
-                  <MenuBuilder />
-                </VendorRoute>
-              }
-            />
+          {/* Super Admin */}
+          <Route
+            path="/super-admin"
+            element={
+              <AdminRoute>
+                <SuperAdminDash />
+              </AdminRoute>
+            }
+          />
 
-            {/* Vendor Dashboard — Approved Only */}
-            <Route
-              path="/admin/pos"
-              element={
-                <VendorRoute>
-                  <ApprovedOnly>
-                    <LivePOS />
-                  </ApprovedOnly>
-                </VendorRoute>
-              }
-            />
-            <Route
-              path="/admin/history"
-              element={
-                <VendorRoute>
-                  <ApprovedOnly>
-                    <History />
-                  </ApprovedOnly>
-                </VendorRoute>
-              }
-            />
+          {/* B2C Storefront */}
+          <Route path="/store/:slug" element={<Storefront />} />
 
-            {/* Super Admin */}
-            <Route
-              path="/super-admin"
-              element={
-                <AdminRoute>
-                  <SuperAdminDashboard />
-                </AdminRoute>
-              }
-            />
-
-            {/* B2C Storefront */}
-            <Route path="/store/:slug" element={<Storefront />} />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </main>
-      </Router>
-    </AuthProvider>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/signup" replace />} />
+        </Routes>
+      </main>
+    </Router>
   );
 }
 

@@ -14,11 +14,11 @@ const orderSchema = new mongoose.Schema(
         quantity: { type: Number, required: true, default: 1 },
       },
     ],
-    total: {
+    totalAmount: {
       type: Number,
       required: true,
     },
-    customerWhatsApp: {
+    customerPhone: {
       type: String,
       required: [true, 'Customer WhatsApp number is required'],
     },
@@ -29,8 +29,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['placed', 'approved', 'ready', 'completed'],
-      default: 'placed',
+      enum: ['Awaiting Verification', 'Preparing', 'Ready', 'Completed'],
+      default: 'Awaiting Verification',
     },
   },
   { timestamps: true }

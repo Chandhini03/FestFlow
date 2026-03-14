@@ -3,7 +3,7 @@ const slugify = require('slugify');
 
 const vendorSchema = new mongoose.Schema(
   {
-    stallName: {
+    name: {
       type: String,
       required: [true, 'Stall name is required'],
       trim: true,
@@ -39,17 +39,16 @@ const vendorSchema = new mongoose.Schema(
       {
         name: { type: String, required: true },
         price: { type: Number, required: true },
-        available: { type: Boolean, default: true },
+        stock: { type: Number, default: 0 },
       },
     ],
   },
   { timestamps: true }
 );
 
-// Auto-generate slug from stallName before saving
-vendorSchema.pre('save', async function (next) {
-  if (this.isModified('stallName') || this.isNew) {
-    let baseSlug = slugify(this.stallName, { lower: true, strict: true });
+vendorSchema.pre('save', async function () {
+  if (this.isModified('name') || this.isNew) {
+    let baseSlug = slugify(this.name, { lower: true, strict: true });
     let slug = baseSlug;
     let counter = 1;
 
@@ -60,7 +59,6 @@ vendorSchema.pre('save', async function (next) {
     }
     this.slug = slug;
   }
-  next();
 });
 
 module.exports = mongoose.model('Vendor', vendorSchema);
