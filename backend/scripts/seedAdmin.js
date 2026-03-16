@@ -18,12 +18,12 @@ async function seed() {
   }
 
   const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash('admin123', salt);
+  const hashedPassword = await bcrypt.hash('superadmin123', salt);
 
   const admin = new Admin({
     username: 'superadmin',
     password: hashedPassword,
-    managedEventCodes: ['CEG26'],
+    managedEventCodes: ['ALL'],
   });
 
   await admin.save();

@@ -1,37 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Core palette */
-  --bg-primary: #0a0a12;
-  --bg-secondary: #12121e;
-  --bg-card: #16162a;
-  --bg-card-hover: #1c1c36;
-  --bg-input: #1a1a2e;
+  /* Core palette - Cherry Cola & Cream Vanilla */
+  --cherry-cola: #9A0002;
+  --cream-vanilla: #EFE6DE;
+  --cherry-light: #c00003;
+  --cherry-dark: #6e0002;
+  
+  --bg-primary: var(--cream-vanilla);
+  --bg-secondary: #f4eee8; /* Slightly darker cream */
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafafa;
+  --bg-input: #ffffff;
 
-  --text-primary: #f0f0f5;
-  --text-secondary: rgba(240, 240, 245, 0.6);
-  --text-muted: rgba(240, 240, 245, 0.35);
+  --text-primary: var(--cherry-dark);
+  --text-secondary: #4a0001;
+  --text-muted: #8c6e6e;
 
-  --accent: #6c5ce7;
-  --accent-glow: rgba(108, 92, 231, 0.25);
-  --accent-light: #a29bfe;
+  --accent: var(--cherry-cola);
+  --accent-glow: rgba(154, 0, 2, 0.15);
+  --accent-light: var(--cherry-light);
 
-  --success: #00cec9;
-  --success-bg: rgba(0, 206, 201, 0.1);
-  --warning: #fdcb6e;
-  --warning-bg: rgba(253, 203, 110, 0.1);
-  --danger: #ff6b6b;
-  --danger-bg: rgba(255, 107, 107, 0.1);
+  --success: #1a5c1a;
+  --success-bg: rgba(26, 92, 26, 0.1);
+  --warning: #855b00;
+  --warning-bg: rgba(133, 91, 0, 0.1);
+  --danger: #9A0002;
+  --danger-bg: rgba(154, 0, 2, 0.1);
 
-  --border: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.12);
+  --border: rgba(154, 0, 2, 0.1);
+  --border-hover: rgba(154, 0, 2, 0.2);
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
 
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 20px rgba(154, 0, 2, 0.08);
+  --shadow-lg: 0 12px 40px rgba(154, 0, 2, 0.12);
 }
 
 * {
@@ -338,14 +343,69 @@ tr:hover td {
   color: var(--text-secondary);
 }
 
-.auth-link a {
-  color: var(--accent-light);
+.auth-secondary-link {
+  color: var(--text-secondary);
   text-decoration: none;
+  font-size: 0.95rem;
   font-weight: 600;
+  transition: opacity 0.2s;
 }
 
-.auth-link a:hover {
+.auth-secondary-link:hover {
+  opacity: 0.8;
+}
+
+.auth-admin-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.auth-admin-link:hover {
+  color: var(--cherry-cola);
   text-decoration: underline;
+}
+
+/* ─── Role Portal ─── */
+
+.auth-card-portal {
+  cursor: pointer;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  border: 2px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-card-portal:hover {
+  border-color: var(--cherry-cola);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  background: var(--bg-card);
+}
+
+.auth-card-portal h2 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--cherry-cola);
+}
+
+.auth-card-portal p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.portal-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 4px 12px var(--accent-glow));
 }
 
 /* ─── Error Messages ─── */

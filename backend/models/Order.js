@@ -32,6 +32,15 @@ const orderSchema = new mongoose.Schema(
       enum: ['Awaiting Verification', 'Preparing', 'Ready', 'Completed'],
       default: 'Awaiting Verification',
     },
+    paymentMethod: {
+      type: String,
+      enum: ['UPI', 'Cash'],
+      default: 'UPI',
+    },
+    staffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Staff',
+    },
   },
   { timestamps: true }
 );

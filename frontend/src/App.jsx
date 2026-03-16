@@ -6,6 +6,7 @@ import SuperAdminDash from './pages/SuperAdminDash';
 import VendorPOS from './pages/VendorPOS';
 import VendorHistory from './pages/VendorHistory';
 import Storefront from './pages/Storefront';
+import CashierPOS from './pages/CashierPOS';
 import CustomerOrders from './components/CustomerOrders';
 import './index.css';
 
@@ -31,6 +32,14 @@ export function ApprovedOnly({ children }) {
   if (!userStr) return <Navigate to="/signup" replace />;
   const user = JSON.parse(userStr);
   if (user.approvalStatus !== 'approved') return <Navigate to="/admin" replace />;
+  return children;
+}
+
+export function StaffRoute({ children }) {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return <Navigate to="/signup?mode=staff" replace />;
+  const user = JSON.parse(userStr);
+  if (user.role !== 'staff') return <Navigate to="/signup?mode=staff" replace />;
   return children;
 }
 
@@ -98,6 +107,16 @@ function App() {
 
           {/* B2C Storefront */}
           <Route path="/store/:slug" element={<Storefront />} />
+
+          {/* Cashier POS */}
+          <Route
+            path="/cashier"
+            element={
+              <StaffRoute>
+                <CashierPOS />
+              </StaffRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/signup" replace />} />

@@ -27,6 +27,27 @@ router.post('/', async (req, res) => {
     if (!vendor) return res.status(404).json({ error: 'Stall not found.' });
     if (!vendor.isLive) return res.status(400).json({ error: 'This stall is currently offline.' });
 
+    // 1. Validate Stock
+    for (const orderItem of items) {
+      const inventoryItem = vendor.inventory.find(i => i.name === orderItem.name);
+      if (!inventoryItem) {
+        return res.status(400).json({ error: `Item "${orderItem.name}" no longer exists in menu.` });
+      }
+      if (inventoryItem.stock < orderItem.quantity) {
+        return res.status(400).json({ error: `Insufficient stock for "${orderItem.name}". Only ${inventoryItem.stock} left.` });
+      }
+    }
+
+    // 2. Deduct Stock
+    for (const orderItem of items) {
+      const inventoryItem = vendor.inventory.find(i => i.name === orderItem.name);
+      inventoryItem.stock -= orderItem.quantity;
+    }
+
+    // Mark inventory as modified so Mongoose saves the subdocument changes
+    vendor.markModified('inventory');
+    await vendor.save();
+
     // Calculate totalAmount
     const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
