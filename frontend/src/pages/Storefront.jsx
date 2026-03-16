@@ -18,7 +18,7 @@ export default function Storefront() {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5005/api/vendors/store/${slug}`)
+    fetch(`http://${window.location.hostname}:5000/api/vendors/store/${slug}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) throw new Error(data.error);
@@ -33,7 +33,7 @@ export default function Storefront() {
     let intervalId;
     if (placedOrderId && placedOrderStatus !== 'Completed') {
       intervalId = setInterval(() => {
-        fetch(`http://${window.location.hostname}:5005/api/orders/${placedOrderId}`)
+        fetch(`http://${window.location.hostname}:5000/api/orders/${placedOrderId}`)
           .then(res => res.json())
           .then(data => {
             if (data.status) {
@@ -85,7 +85,7 @@ export default function Storefront() {
     setPlacing(true);
     setError('');
     try {
-      const res = await fetch(`http://${window.location.hostname}:5005/api/orders`, {
+      const res = await fetch(`http://${window.location.hostname}:5000/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -198,62 +198,87 @@ export default function Storefront() {
   }
 
   // Filter out items without stock if required by frontend logic, or display everything
-  // In the vendor schema, `stock` exists.
   return (
-    <div style={{padding: '1rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif'}}>
+    <div className="page" style={{ maxWidth: '800px', margin: '0 auto' }}>
       {/* Header */}
-      <div className="storefront-header" style={{textAlign: 'center', marginBottom: '2rem'}}>
-        <div className="storefront-name" style={{fontSize: '2.5rem', fontWeight: 'bold'}}>{vendor.name}</div>
-        <span style={{ padding: '0.2rem 0.5rem', background: 'red', color: 'white', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', display: 'inline-block', marginTop: '0.5rem' }}>● LIVE</span>
+      <div className="storefront-header" style={{ textAlign: 'center', marginBottom: '2rem', background: 'transparent', border: 'none' }}>
+        <div className="storefront-name" style={{ fontSize: '3rem', fontWeight: '900', color: 'var(--cherry-cola)' }}>{vendor.name}</div>
+        <div style={{ marginTop: '0.5rem' }}>
+          <span className="badge badge-live" style={{ background: 'var(--cherry-cola)', color: 'white', border: 'none' }}>● LIVE</span>
+        </div>
       </div>
 
       {error && (
-        <div style={{ maxWidth: '900px', margin: '1rem auto' }}>
-           <div className="error-msg" style={{color: 'red', padding: '10px', background: '#fee', borderRadius: '5px', textAlign: 'center'}}>{error}</div>
+        <div style={{ maxWidth: '400px', margin: '1rem auto' }}>
+           <div className="error-msg">{error}</div>
         </div>
       )}
 
       {/* Menu Grid */}
-      <div className="menu-grid" style={{ paddingBottom: cartCount > 0 ? '120px' : '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-        {vendor.inventory.map((item, idx) => (
-          <div className="menu-item" key={idx} style={{background: 'white', border: '1px solid #eee', borderRadius: '8px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'}}>
-            <div>
-              <div className="menu-item-name" style={{fontWeight: 'bold', fontSize: '1.1rem'}}>{item.name}</div>
-              {cart[item.name] && (
-                <div style={{ fontSize: '0.8rem', color: '#0066cc', marginTop: '0.25rem', fontWeight: 'bold' }}>
-                  {cart[item.name].quantity} in cart
+      <div className="menu-grid" style={{ paddingBottom: cartCount > 0 ? '120px' : '2rem' }}>
+        {vendor.inventory.map((item, idx) => {
+          const inCart = cart[item.name]?.quantity || 0;
+          const isOutOfStock = item.stock <= 0;
+          const isMaxed = inCart >= item.stock;
+
+          return (
+            <div className="menu-item" key={idx} style={{ 
+              opacity: isOutOfStock ? 0.6 : 1,
+              border: inCart > 0 ? '2px solid var(--cherry-cola)' : '1px solid var(--border)',
+              background: 'white'
+            }}>
+              <div style={{ flex: 1 }}>
+                <div className="menu-item-name" style={{ color: 'var(--cherry-dark)' }}>{item.name}</div>
+                <div style={{ fontSize: '0.8rem', color: isOutOfStock ? 'var(--cherry-cola)' : 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 'bold' }}>
+                  {isOutOfStock ? 'SOLD OUT' : `${item.stock} available`}
                 </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span className="menu-item-price" style={{fontWeight: 'bold', color: 'green'}}>₹{item.price}</span>
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                {cart[item.name] && (
-                  <button className="btn" onClick={() => removeFromCart(item.name)} style={{ padding: '0.4rem 0.7rem', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                    −
-                  </button>
+                {inCart > 0 && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--cherry-cola)', marginTop: '0.4rem', fontWeight: '800' }}>
+                    {inCart} in cart
+                  </div>
                 )}
-                <button className="btn" onClick={() => addToCart(item)} style={{ padding: '0.4rem 0.7rem', background: '#e0f7fa', color: '#006064', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  +
-                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span className="menu-item-price" style={{ color: 'var(--cherry-cola)', fontSize: '1.25rem' }}>₹{item.price}</span>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  {inCart > 0 && (
+                    <button className="btn btn-outline btn-sm" onClick={() => removeFromCart(item.name)} style={{ width: '32px', height: '32px', padding: 0, borderRadius: '50%' }}>
+                      −
+                    </button>
+                  )}
+                  {!isOutOfStock && (
+                    <button 
+                      className="btn btn-primary btn-sm" 
+                      onClick={() => addToCart(item)} 
+                      disabled={isMaxed}
+                      style={{ 
+                        width: '32px', height: '32px', padding: 0, borderRadius: '50%',
+                        backgroundColor: isMaxed ? '#ccc' : 'var(--cherry-cola)',
+                        cursor: isMaxed ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Cart Bar */}
       {cartCount > 0 && !showCheckout && (
-        <div style={{position: 'fixed', bottom: 0, left: 0, right: 0, padding: '1rem', background: 'white', borderTop: '1px solid #ddd', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center'}}>
-          <div className="cart-summary" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '800px'}}>
+        <div className="cart-sticky" style={{ background: 'var(--cherry-cola)', color: 'white', borderTop: 'none' }}>
+          <div className="cart-summary">
             <div>
-              <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{cartCount} item{cartCount !== 1 ? 's' : ''}</span>
-              <span style={{ color: 'green', fontWeight: 800, marginLeft: '0.75rem', fontSize: '1.2rem' }}>
+              <span style={{ fontWeight: 800, fontSize: '1.2rem' }}>{cartCount} item{cartCount !== 1 ? 's' : ''}</span>
+              <span style={{ marginLeft: '1rem', fontSize: '1.4rem', fontWeight: '900', color: 'var(--cream-vanilla)' }}>
                 ₹{cartTotalAmount}
               </span>
             </div>
-            <button className="btn btn-primary" onClick={() => setShowCheckout(true)} style={{padding: '0.8rem 1.5rem', background: '#007bff', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>
-              Checkout →
+            <button className="btn" onClick={() => setShowCheckout(true)} style={{ background: 'white', color: 'var(--cherry-cola)', padding: '0.8rem 2rem', borderRadius: '50px', fontWeight: '900', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+              Order Now →
             </button>
           </div>
         </div>
@@ -262,63 +287,42 @@ export default function Storefront() {
       {/* Checkout Modal */}
       {showCheckout && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200,
+          position: 'fixed', inset: 0, background: 'rgba(74, 0, 1, 0.85)', zIndex: 200,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(8px)',
         }}>
-          <div className="card" style={{ maxWidth: '440px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'white', padding: '2rem', borderRadius: '12px' }}>
-            <h2 style={{ fontWeight: 800, marginBottom: '0.25rem', fontSize: '1.5rem' }}>💳 Checkout</h2>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-              {cartCount} item{cartCount !== 1 ? 's' : ''} · ₹{cartTotalAmount} total
+          <div className="card" style={{ maxWidth: '440px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--cream-vanilla)', padding: '2.5rem 2rem', border: 'none' }}>
+            <h2 style={{ fontWeight: 900, marginBottom: '0.5rem', fontSize: '1.75rem', color: 'var(--cherry-cola)', textAlign: 'center' }}>💳 Checkout</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '1.5rem', textAlign: 'center', fontWeight: '600' }}>
+              {cartCount} items · Total ₹{cartTotalAmount}
             </p>
 
+            {error && <div className="error-msg" style={{ textAlign: 'center' }}>{error}</div>}
+
             {/* Items Summary */}
-            <div style={{ marginBottom: '1.25rem', background: '#f8f9fa', padding: '1rem', borderRadius: '8px' }}>
+            <div style={{ marginBottom: '1.5rem', background: 'rgba(154, 0, 2, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed var(--cherry-cola)' }}>
               {cartItems.map((it, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', fontSize: '0.9rem' }}>
-                  <span style={{fontWeight: 'bold'}}>{it.quantity}× {it.name}</span>
-                  <span style={{ color: '#666' }}>₹{it.price * it.quantity}</span>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1rem' }}>
+                  <span style={{ fontWeight: '700', color: 'var(--cherry-dark)' }}>{it.quantity}× {it.name}</span>
+                  <span style={{ color: 'var(--cherry-cola)', fontWeight: '800' }}>₹{it.price * it.quantity}</span>
                 </div>
               ))}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0 0', borderTop: '1px solid #ddd', fontWeight: 800, fontSize: '1.1rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0 0', borderTop: '2px solid var(--cherry-cola)', fontWeight: '900', fontSize: '1.25rem', marginTop: '1rem', color: 'var(--cherry-cola)' }}>
                 <span>Total</span>
-                <span style={{ color: 'green' }}>₹{cartTotalAmount}</span>
+                <span>₹{cartTotalAmount}</span>
               </div>
             </div>
 
             {/* WhatsApp Number */}
-            <div className="form-group" style={{marginBottom: '1.5rem'}}>
-              <label className="form-label" style={{display: 'block', fontWeight: 'bold', marginBottom: '0.5rem'}}>WhatsApp Number</label>
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label className="form-label">WhatsApp Number</label>
               <input
                 className="form-input"
                 type="tel"
                 placeholder="91XXXXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                style={{width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #ccc'}}
               />
-            </div>
-
-            {/* UPI Pay Button */}
-            <a
-              href={upiString}
-              className="btn btn-success btn-lg btn-block"
-              style={{ display: 'block', width: '100%', padding: '1rem', background: '#28a745', color: 'white', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', marginBottom: '1.5rem' }}
-              onClick={(e) => {
-                // On desktop, the deep-link won't work, so we just let the QR handle it
-              }}
-            >
-              Pay ₹{cartTotalAmount} via UPI App
-            </a>
-
-            {/* Fallback QR */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.8rem', fontWeight: 'bold' }}>
-                Or scan from another phone:
-              </p>
-              <div style={{ display: 'inline-block', padding: '1rem', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
-                <QRCodeSVG value={upiString} size={180} />
-              </div>
             </div>
 
             {/* Confirm Order */}
@@ -326,18 +330,27 @@ export default function Storefront() {
               className="btn btn-primary btn-lg btn-block"
               onClick={placeOrder}
               disabled={placing}
-              style={{width: '100%', padding: '1rem', background: '#007bff', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '0.5rem'}}
+              style={{ padding: '1.25rem', fontSize: '1.1rem', borderRadius: '50px' }}
             >
               {placing ? 'Placing Order...' : '✓ I\'ve Paid — Place Order'}
             </button>
 
             <button
               className="btn btn-outline btn-block"
-              style={{ width: '100%', padding: '1rem', background: 'transparent', color: '#666', border: '1px solid #ccc', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem' }}
+              style={{ marginTop: '0.75rem', border: 'none' }}
               onClick={() => setShowCheckout(false)}
             >
               ← Back to Menu
             </button>
+            
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                Scan to pay via UPI:
+              </p>
+              <div style={{ display: 'inline-block', padding: '10px', background: 'white', borderRadius: '12px', border: '4px solid var(--cherry-cola)' }}>
+                <QRCodeSVG value={upiString} size={150} />
+              </div>
+            </div>
           </div>
         </div>
       )}
