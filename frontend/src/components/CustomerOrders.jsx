@@ -17,7 +17,7 @@ export default function CustomerOrders() {
       Promise.all(
         savedOrders.map(async (order) => {
           try {
-            const res = await fetch(`http://${window.location.hostname}:5000/api/orders/${order.id}`);
+            const res = await fetch(`/api/orders/${order.id}`);
             if (!res.ok) return order; // Keep old data if fetch fails
             const data = await res.json();
             return {

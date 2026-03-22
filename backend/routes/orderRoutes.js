@@ -74,7 +74,7 @@ router.get('/active', authMiddleware, async (req, res) => {
   try {
     const orders = await Order.find({
       vendorId: req.user.id,
-      status: { $in: ['Awaiting Verification', 'Preparing'] },
+      status: { $in: ['Awaiting Verification', 'Confirmed', 'Preparing'] },
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -91,7 +91,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     }).sort({ createdAt: -1 });
 
     const totalRevenue = orders
-      .filter((o) => o.status === 'Completed' || o.status === 'Ready')
+      .filter((o) => o.status === 'Completed' || o.status === 'Ready' || o.status === 'Confirmed')
       .reduce((sum, o) => sum + o.totalAmount, 0);
 
     res.json({ totalRevenue, orders });
@@ -104,8 +104,8 @@ router.get('/history', authMiddleware, async (req, res) => {
 router.put('/:id/status', authMiddleware, async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['Awaiting Verification', 'Preparing', 'Ready', 'Completed'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status. Use: Awaiting Verification, Preparing, Ready, or Completed.' });
+    if (!['Awaiting Verification', 'Confirmed', 'Preparing', 'Ready', 'Completed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Use: Awaiting Verification, Confirmed, Preparing, Ready, or Completed.' });
     }
 
     const order = await Order.findById(req.params.id);
@@ -120,8 +120,11 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     await order.save();
 
     // Trigger WhatsApp notifications
+    if (status === 'Confirmed') {
+      sendWhatsApp(order.customerPhone, 'Payment verified! Your order is confirmed. ✅');
+    }
     if (status === 'Preparing') {
-      sendWhatsApp(order.customerPhone, 'Your order has been confirmed and is being prepared! ✅');
+      sendWhatsApp(order.customerPhone, 'Your order is now being prepared! 🍳');
     }
     if (status === 'Ready') {
       sendWhatsApp(order.customerPhone, 'Your order is ready for pickup! 🎉 Visit the stall to collect it.');

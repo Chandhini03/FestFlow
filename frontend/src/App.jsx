@@ -31,7 +31,7 @@ export function ApprovedOnly({ children }) {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/signup" replace />;
   const user = JSON.parse(userStr);
-  if (user.approvalStatus !== 'approved') return <Navigate to="/admin" replace />;
+  if (user.approvalStatus !== 'approved') return <Navigate to="/vendor" replace />;
   return children;
 }
 
@@ -57,7 +57,7 @@ function App() {
 
           {/* Vendor Draft Mode / Menu Builder */}
           <Route
-            path="/admin"
+            path="/vendor"
             element={
               <VendorRoute>
                 <PendingDashboard />
@@ -65,7 +65,7 @@ function App() {
             }
           />
           <Route
-            path="/admin/waiting"
+            path="/vendor/waiting"
             element={
               <VendorRoute>
                 <PendingDashboard />
@@ -75,7 +75,7 @@ function App() {
           
           {/* Vendor Approved Pages */}
           <Route
-            path="/admin/pos"
+            path="/vendor/pos"
             element={
               <VendorRoute>
                 <ApprovedOnly>
@@ -85,7 +85,7 @@ function App() {
             }
           />
           <Route
-            path="/admin/history"
+            path="/vendor/history"
             element={
               <VendorRoute>
                 <ApprovedOnly>

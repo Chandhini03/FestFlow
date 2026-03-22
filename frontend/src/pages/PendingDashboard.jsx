@@ -13,8 +13,16 @@ export default function PendingDashboard() {
   // Menu Builder State
   const [inventory, setInventory] = useState(user?.inventory || []);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemStock, setNewItemStock] = useState('');
+
+  // Edit state
+  const [editIndex, setEditIndex] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editStock, setEditStock] = useState('');
 
   const [liveCode, setLiveCode] = useState(user?.currentEventCode || '');
   const [liveLoading, setLiveLoading] = useState(false);
@@ -120,6 +128,55 @@ export default function PendingDashboard() {
     }
   };
 
+  const handleAddItem = (e) => {
+    e.preventDefault();
+    if (!newItemName || !newItemPrice || !newItemStock) return;
+    const newItem = {
+      name: newItemName,
+      description: newItemDesc,
+      price: Number(newItemPrice),
+      stock: Number(newItemStock),
+    };
+    const updatedInventory = [...inventory, newItem];
+    setInventory(updatedInventory);
+    setNewItemName('');
+    setNewItemDesc('');
+    setNewItemPrice('');
+    setNewItemStock('');
+    saveMenu(updatedInventory);
+  };
+
+  const handleDeleteItem = (index) => {
+    const newInventory = inventory.filter((_, i) => i !== index);
+    setInventory(newInventory);
+    saveMenu(newInventory);
+  };
+
+  const startEdit = (index) => {
+    const item = inventory[index];
+    setEditIndex(index);
+    setEditName(item.name);
+    setEditDesc(item.description || '');
+    setEditPrice(String(item.price));
+    setEditStock(String(item.stock));
+  };
+
+  const cancelEdit = () => {
+    setEditIndex(null);
+  };
+
+  const saveEdit = () => {
+    if (!editName || !editPrice || !editStock) return;
+    const updatedInventory = inventory.map((item, i) =>
+      i === editIndex
+        ? { ...item, name: editName, description: editDesc, price: Number(editPrice), stock: Number(editStock) }
+        : item
+    );
+    setInventory(updatedInventory);
+    setEditIndex(null);
+    saveMenu(updatedInventory);
+  };
+
   const handleAddStaff = async (e) => {
     e.preventDefault();
     setError('');
@@ -141,11 +198,11 @@ export default function PendingDashboard() {
     }
   };
 
-  const handleDeleteItem = (index) => {
-    const newInventory = inventory.filter((_, i) => i !== index);
-    setInventory(newInventory);
-    saveMenu(newInventory);
-  };
+  // Build QR code URL
+  const ipHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? '192.168.243.129' 
+    : window.location.hostname;
+  const qrUrl = user?.slug ? `http://${ipHost}:5173/store/${user.slug}` : '';
 
   return (
     <div className="page" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
@@ -169,6 +226,7 @@ export default function PendingDashboard() {
           </h3>
           <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
             <input className="form-input" type="text" placeholder="Item Name (e.g. Classic Burger)" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} required />
+            <input className="form-input" type="text" placeholder="Description (optional)" value={newItemDesc} onChange={(e) => setNewItemDesc(e.target.value)} />
             <div style={{ display: 'flex', gap: '1rem' }}>
               <input className="form-input" type="number" placeholder="Price (₹)" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} required style={{ flex: 1 }} />
               <input className="form-input" type="number" placeholder="Initial Stock" value={newItemStock} onChange={(e) => setNewItemStock(e.target.value)} required style={{ flex: 1 }} />
@@ -180,14 +238,39 @@ export default function PendingDashboard() {
             {inventory.length > 0 ? (
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {inventory.map((item, idx) => (
-                  <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid var(--border)', background: item.stock <= 5 ? 'var(--danger-bg)' : 'transparent' }}>
-                    <div>
-                      <div style={{ fontWeight: '800', color: 'var(--cherry-dark)' }}>{item.name}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--cherry-cola)', fontWeight: '700' }}>
-                        ₹{item.price} · <span style={{ color: item.stock === 0 ? 'red' : 'inherit' }}>{item.stock} in stock</span>
+                  <li key={idx} style={{ padding: '1rem', borderBottom: '1px solid var(--border)', background: item.stock <= 5 ? 'var(--danger-bg)' : 'transparent' }}>
+                    {editIndex === idx ? (
+                      /* Inline Edit Mode */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input className="form-input" type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" style={{ fontSize: '0.9rem' }} />
+                        <input className="form-input" type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Description" style={{ fontSize: '0.85rem' }} />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <input className="form-input" type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} placeholder="Price" style={{ flex: 1, fontSize: '0.9rem' }} />
+                          <input className="form-input" type="number" value={editStock} onChange={(e) => setEditStock(e.target.value)} placeholder="Stock" style={{ flex: 1, fontSize: '0.9rem' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={saveEdit} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', fontSize: '0.85rem' }}>Save</button>
+                          <button onClick={cancelEdit} className="btn btn-outline" style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', fontSize: '0.85rem' }}>Cancel</button>
+                        </div>
                       </div>
-                    </div>
-                    <button onClick={() => handleDeleteItem(idx)} style={{ color: 'var(--cherry-cola)', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.25rem' }}>🗑️</button>
+                    ) : (
+                      /* Display Mode */
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ fontWeight: '800', color: 'var(--cherry-dark)' }}>{item.name}</div>
+                          {item.description && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{item.description}</div>
+                          )}
+                          <div style={{ fontSize: '0.85rem', color: 'var(--cherry-cola)', fontWeight: '700', marginTop: '0.25rem' }}>
+                            ₹{item.price} · <span style={{ color: item.stock === 0 ? 'red' : 'inherit' }}>{item.stock} in stock</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => startEdit(idx)} style={{ color: 'var(--cherry-cola)', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1rem' }} title="Edit">✏️</button>
+                          <button onClick={() => handleDeleteItem(idx)} style={{ color: 'var(--cherry-cola)', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1rem' }} title="Delete">🗑️</button>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -253,12 +336,12 @@ export default function PendingDashboard() {
           )}
 
           {/* QR Code Card */}
-          {!isPending && (
+          {user?.isLive && (
             <div className="card" style={{ textAlign: 'center', background: 'rgba(154, 0, 2, 0.05)', border: '1px dashed var(--cherry-cola)' }}>
               <h3 style={{ marginBottom: '0.5rem', fontWeight: '900', color: 'var(--cherry-cola)' }}>🖨️ Stall QR Code</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Print this for your customers to scan.</p>
               <div style={{ padding: '1rem', background: 'white', borderRadius: '16px', display: 'inline-block', border: '4px solid var(--cherry-cola)' }}>
-                <QRCodeSVG value={`${window.location.origin}/store/${user?.slug}`} size={160} />
+                <QRCodeSVG value={qrUrl} size={160} />
               </div>
               <code style={{ width: '100%', display: 'block', marginTop: '1rem', padding: '0.75rem', background: 'white', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--cherry-cola)', fontWeight: 'bold' }}>
                 /{user?.slug}

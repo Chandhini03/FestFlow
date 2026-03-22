@@ -18,7 +18,7 @@ export default function SuperAdminDash() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/admin/applications/${eventCode}`, {
+      const res = await fetch(`/api/admin/applications/${eventCode}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -36,7 +36,7 @@ export default function SuperAdminDash() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/admin/analytics/${eventCode}`, {
+      const res = await fetch(`/api/admin/analytics/${eventCode}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -60,7 +60,7 @@ export default function SuperAdminDash() {
     setError('');
     setMessage('');
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/admin/approve/${appId}`, {
+      const res = await fetch(`/api/admin/approve/${appId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status }),

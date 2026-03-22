@@ -6,7 +6,7 @@ export default function VendorHistory() {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5000/api/orders/history`, {
+    fetch(`/api/orders/history`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())

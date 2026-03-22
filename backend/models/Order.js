@@ -29,7 +29,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Awaiting Verification', 'Preparing', 'Ready', 'Completed'],
+      enum: ['Awaiting Verification', 'Confirmed', 'Preparing', 'Ready', 'Completed'],
       default: 'Awaiting Verification',
     },
     paymentMethod: {

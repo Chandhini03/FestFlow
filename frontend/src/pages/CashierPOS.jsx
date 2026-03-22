@@ -20,7 +20,7 @@ export default function CashierPOS() {
     }
 
     // Fetch vendor inventory
-    fetch(`http://${window.location.hostname}:5000/api/vendors/${user.vendor.id}`)
+    fetch(`/api/vendors/${user.vendor.id}`)
       .then(res => res.json())
       .then(data => {
         setVendor(data);
@@ -68,7 +68,7 @@ export default function CashierPOS() {
     setMessage({ type: '', text: '' });
 
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/orders/cash`, {
+      const res = await fetch(`/api/orders/cash`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export default function CashierPOS() {
       setPhone('');
       
       // Refresh inventory
-      const vRes = await fetch(`http://${window.location.hostname}:5000/api/vendors/${user.vendor.id}`);
+      const vRes = await fetch(`/api/vendors/${user.vendor.id}`);
       const vData = await vRes.json();
       setItems(vData.inventory);
 

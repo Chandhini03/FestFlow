@@ -7,7 +7,7 @@ export default function VendorPOS() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/orders/active`, {
+      const res = await fetch(`/api/orders/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -26,7 +26,7 @@ export default function VendorPOS() {
 
   const updateStatus = async (orderId, newStatus) => {
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/orders/${orderId}/status`, {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
@@ -41,7 +41,7 @@ export default function VendorPOS() {
     }
   };
 
-  const placed = orders.filter((o) => o.status === 'Awaiting Verification');
+  const awaitingVerification = orders.filter((o) => o.status === 'Awaiting Verification');
   const preparing = orders.filter((o) => o.status === 'Preparing');
 
   return (
@@ -54,15 +54,15 @@ export default function VendorPOS() {
       {error && <div className="error-msg">{error}</div>}
 
       <div className="kanban" style={{ marginTop: '2rem' }}>
-        {/* Column: New Orders */}
+        {/* Column: Awaiting Verification */}
         <div className="kanban-col" style={{ border: '2px solid var(--cherry-cola)', background: 'white' }}>
           <div className="kanban-col-title" style={{ color: 'var(--cherry-cola)', fontWeight: '900' }}>
-            🔔 New ({placed.length})
+            🔔 New ({awaitingVerification.length})
           </div>
-          {placed.length === 0 && (
+          {awaitingVerification.length === 0 && (
             <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '3rem 0' }}>No new orders</p>
           )}
-          {placed.map((order) => (
+          {awaitingVerification.map((order) => (
             <div className="kanban-card" key={order._id} style={{ border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <span style={{ fontWeight: 900, fontSize: '0.9rem', color: 'var(--cherry-cola)' }}>
@@ -83,7 +83,7 @@ export default function VendorPOS() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px dashed var(--cherry-cola)', paddingTop: '1rem' }}>
                 <span style={{ fontWeight: 900, color: 'var(--cherry-cola)', fontSize: '1.2rem' }}>₹{order.totalAmount}</span>
                 <button className="btn btn-success" style={{ padding: '0.5rem 1rem', borderRadius: '50px' }} onClick={() => updateStatus(order._id, 'Preparing')}>
-                  Approve
+                  ✅ Approve
                 </button>
               </div>
             </div>
@@ -112,8 +112,14 @@ export default function VendorPOS() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px dashed var(--cherry-cola)', paddingTop: '1rem' }}>
                 <span style={{ fontWeight: 900, color: 'var(--cherry-cola)' }}>₹{order.totalAmount}</span>
-                <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '50px' }} onClick={() => updateStatus(order._id, 'Ready')}>
-                  Ready
+                <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '50px' }} onClick={() => {
+                  updateStatus(order._id, 'Ready');
+                  const msg = encodeURIComponent(`Hello! Your order (#${order._id.slice(-6).toUpperCase()}) is ready for pickup! 🎉`);
+                  const phoneStr = String(order.customerPhone).replace(/\\D/g, '');
+                  const phone = phoneStr.length === 10 ? `91${phoneStr}` : phoneStr;
+                  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                }}>
+                  🟢 Order Ready & Notify
                 </button>
               </div>
             </div>

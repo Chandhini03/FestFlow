@@ -19,22 +19,22 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link to={role === 'admin' ? '/super-admin' : (role === 'staff' ? '/cashier' : '/admin')} className="navbar-brand">
+      <Link to={role === 'admin' ? '/super-admin' : (role === 'staff' ? '/cashier' : '/vendor')} className="navbar-brand">
         <span className="brand-icon">⚡</span> FestFlow
       </Link>
 
       <div className="navbar-links">
         {role === 'vendor' && (
           <>
-            <Link to="/admin" className="nav-link">
+            <Link to="/vendor" className="nav-link">
               Dashboard
             </Link>
             {isApproved && (
               <>
-                <Link to="/admin/pos" className="nav-link">
+                <Link to="/vendor/pos" className="nav-link">
                   POS
                 </Link>
-                <Link to="/admin/history" className="nav-link">
+                <Link to="/vendor/history" className="nav-link">
                   History
                 </Link>
               </>

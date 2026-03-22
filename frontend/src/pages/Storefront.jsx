@@ -18,7 +18,7 @@ export default function Storefront() {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5000/api/vendors/store/${slug}`)
+    fetch(`/api/vendors/store/${slug}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) throw new Error(data.error);
@@ -33,7 +33,7 @@ export default function Storefront() {
     let intervalId;
     if (placedOrderId && placedOrderStatus !== 'Completed') {
       intervalId = setInterval(() => {
-        fetch(`http://${window.location.hostname}:5000/api/orders/${placedOrderId}`)
+        fetch(`/api/orders/${placedOrderId}`)
           .then(res => res.json())
           .then(data => {
             if (data.status) {
@@ -85,7 +85,7 @@ export default function Storefront() {
     setPlacing(true);
     setError('');
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/orders`, {
+      const res = await fetch(`/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,26 +145,36 @@ export default function Storefront() {
 
   if (orderPlaced) {
     const getStatusColor = () => {
+      if (placedOrderStatus === 'Confirmed') return '#28a745';
       if (placedOrderStatus === 'Ready') return '#28a745';
       if (placedOrderStatus === 'Preparing') return '#ffc107';
       if (placedOrderStatus === 'Completed') return '#6c757d';
       return '#007bff';
     };
 
+    const getStatusEmoji = () => {
+      if (placedOrderStatus === 'Confirmed') return '✅';
+      if (placedOrderStatus === 'Ready') return '🎉';
+      if (placedOrderStatus === 'Preparing') return '🔥';
+      if (placedOrderStatus === 'Completed') return '✅';
+      return '⏳';
+    };
+
     const getStatusMessage = () => {
+      if (placedOrderStatus === 'Confirmed') return 'Payment Verified and Order Confirmed! 🎉';
       if (placedOrderStatus === 'Ready') return 'Your order is ready for pickup! 🎉';
-      if (placedOrderStatus === 'Preparing') return 'Your order is being prepared... 🔥';
+      if (placedOrderStatus === 'Preparing') return 'Your order is Under Preparation... 🔥';
       if (placedOrderStatus === 'Completed') return 'Order completed. Enjoy your meal! 🍔';
-      return 'Waiting for the vendor to confirm your order... ⏳';
+      return 'Waiting for the vendor to verify your payment... ⏳';
     };
 
     return (
       <div className="storefront-closed" style={{padding: '2rem', textAlign: 'center'}}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {placedOrderStatus === 'Ready' ? '🎉' : placedOrderStatus === 'Preparing' ? '🔥' : placedOrderStatus === 'Completed' ? '✅' : '⏳'}
+          {getStatusEmoji()}
         </div>
         <h1 style={{fontSize: '2rem', marginBottom: '1rem', color: getStatusColor()}}>
-          {placedOrderStatus}
+          {placedOrderStatus === 'Confirmed' ? 'Payment Verified' : (placedOrderStatus === 'Preparing' ? 'Under Preparation' : placedOrderStatus)}
         </h1>
         <p style={{ color: '#666', maxWidth: '420px', margin: '0.5rem auto 1.5rem', lineHeight: 1.5, fontSize: '1.1rem' }}>
           {getStatusMessage()}
@@ -229,6 +239,9 @@ export default function Storefront() {
             }}>
               <div style={{ flex: 1 }}>
                 <div className="menu-item-name" style={{ color: 'var(--cherry-dark)' }}>{item.name}</div>
+                {item.description && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>{item.description}</div>
+                )}
                 <div style={{ fontSize: '0.8rem', color: isOutOfStock ? 'var(--cherry-cola)' : 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 'bold' }}>
                   {isOutOfStock ? 'SOLD OUT' : `${item.stock} available`}
                 </div>
@@ -325,15 +338,26 @@ export default function Storefront() {
               />
             </div>
 
-            {/* Confirm Order */}
+            {/* Step 1: Place Order */}
             <button
               className="btn btn-primary btn-lg btn-block"
               onClick={placeOrder}
               disabled={placing}
               style={{ padding: '1.25rem', fontSize: '1.1rem', borderRadius: '50px' }}
             >
-              {placing ? 'Placing Order...' : '✓ I\'ve Paid — Place Order'}
+              {placing ? 'Placing Order...' : '🛒 Place Order'}
             </button>
+
+            {/* Payment Instructions */}
+            <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(154, 0, 2, 0.05)', borderRadius: '12px', border: '1px solid var(--cherry-cola)' }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--cherry-cola)', margin: '0 0 0.5rem' }}>💡 Payment Instructions</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                1. Scan the UPI QR code below to pay<br/>
+                2. Complete payment in your UPI app<br/>
+                3. Click "Place Order" above to submit your order<br/>
+                4. The vendor will verify your payment
+              </p>
+            </div>
 
             <button
               className="btn btn-outline btn-block"

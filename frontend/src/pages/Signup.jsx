@@ -68,7 +68,7 @@ export default function Signup() {
         navigate('/cashier');
       } else {
         localStorage.setItem('user', JSON.stringify({ ...data.vendor, role: 'vendor' }));
-        navigate('/admin');
+        navigate('/vendor');
       }
     } catch (err) {
       setError(err.message);
